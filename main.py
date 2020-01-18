@@ -25,7 +25,7 @@ class MainWindow(QDialog):
         super(MainWindow,  self).__init__(parent)
         self.resize(1024, 768)
         self.center()
-        self.setWindowTitle('Dialogo simples')
+        self.setWindowTitle('PyQt Scruff Designer')
         self.ctrl_list = ['QComboBox','QLineEdit','QSpinBox','QPlainTextEdit','QDateEdit','QDoubleSpinBox','QCheckBox',
                           'QTableWidget','QPushButton','QToolButton','QListWidget']
 
@@ -240,12 +240,10 @@ class MainWindow(QDialog):
             col += 1
             item = QTableWidgetItem()
             item.setText(data['control_name'])
-            item.setFlags(Qt.ItemIsEnabled)
             self.grdMain.setItem(row, col, item)
             col += 1
             item = QTableWidgetItem()
             item.setText(data['label'])
-            item.setFlags(Qt.ItemIsEnabled)
             self.grdMain.setItem(row, col, item)
             col += 1
 
@@ -853,8 +851,9 @@ class MainWindow(QDialog):
         toto = ''
         import_code = self.make_import_code()
         class_code = self.make_class_code()
+        stretch_code = self.add_stretch()
         main_code = self.make_main_code()
-        toto = import_code + '\n' + class_code + '\n' + main_code
+        toto = import_code + '\n' + class_code + '\n' + stretch_code + main_code
         sourceFile = open('./test.py', 'w')
         print(toto, file=sourceFile)
         sourceFile.close()
@@ -865,7 +864,10 @@ class MainWindow(QDialog):
         block_import = '''#!/usr/bin/python\n# -*- coding: utf-8 -*-\n'''
         import_set = set()
         for linha in range(0, self.grdMain.rowCount()):
-            import_set.add(self.grdMain.item(linha, 0).text())
+            if self.grdMain.item(linha, 0).text() in ['addStretch']:
+                pass
+            else:
+                import_set.add(self.grdMain.item(linha, 0).text())
     
         import_set = list(import_set)
         block_import += 'import sys\n'
@@ -884,17 +886,31 @@ class MainWindow(QDialog):
         for line in range(0,self.grdMain.rowCount()):
             
             if self.grdMain.item(line, 3).text() != 'None':
-                print('tem layout')
-                class_code += TAB + TAB + self.grdMain.item(line, 1).text() + ' = '
-                class_code += self.grdMain.item(line, 0).text() + '()\n'
+                class_code += self.widget_code({'widget_type': self.grdMain.item(line, 0).text(),
+                                                'w_name': self.grdMain.item(line, 1).text(),
+                                                'label':self.grdMain.item(line, 2).text()})
                 class_code += TAB + TAB +  self.grdMain.item(line, 3).text() + '.addWidget(' + self.grdMain.item(line, 1).text() + ')\n'
             else:
                 if self.grdMain.item(line, 0).text() in ['QVBoxLayout', 'QHBoxLayout']:
                     pass
                 else:
+                    class_code += self.widget_code({'widget_type': self.grdMain.item(line, 0).text(),
+                                                    'w_name': self.grdMain.item(line, 1).text(),
+                                                    'label': self.grdMain.item(line, 2).text()})
                     class_code += TAB + TAB + 'masterLayout.addWidget(' + self.grdMain.item(line, 1).text() + ')\n'
         class_code += self.add_layouts_code()
         return class_code
+    
+    def widget_code(self, data):
+        widget_code = ''
+        if data['widget_type'] == 'addStretch':
+            pass
+        else:
+            if data['widget_type'] in ['QLabel', 'QPushButton','QCheckBox']:
+                widget_code += TAB + TAB + data['w_name'] + ' = ' + data['widget_type'] +  '(\'''' + data['label'] + '''\')\n'''
+            else:
+                widget_code += TAB + TAB + data['w_name'] + ' = ' + data['widget_type'] + '()\n'
+        return widget_code
     
     def make_main_code(self):
         class_name = 'TestClass'
@@ -920,8 +936,19 @@ class MainWindow(QDialog):
         for linha in range(0, self.grdMain.rowCount()):
             h = self.grdMain.item(linha, 0).text()
             if h in ('QVBoxLayout', 'QHBoxLayout'):
-                add_layouts_code += TAB + TAB + 'masterLayout.adddLayout(' + self.grdMain.item(linha, 1).text() + ')\n'
+                add_layouts_code += TAB + TAB + 'masterLayout.addLayout(' + self.grdMain.item(linha, 1).text() + ')\n'
         return add_layouts_code
+    
+    def add_stretch(self):
+        stretch_code = ''
+        for linha in range(0, self.grdMain.rowCount()):
+            h = self.grdMain.item(linha, 0).text()
+            if h == 'addStretch' and self.grdMain.item(linha, 3).text() != 'None':
+                stretch_code += TAB + TAB + self.grdMain.item(linha, 3).text() + '.addStretch()\n'
+            elif h == 'addStretch' and self.grdMain.item(linha, 3).text() == 'None':
+                stretch_code += TAB + TAB + 'masterLayout.addStretch()\n'
+
+        return stretch_code + '\n'
 
 def main():
     app = QApplication(sys.argv)
