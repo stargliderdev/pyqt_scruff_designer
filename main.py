@@ -89,16 +89,12 @@ class MainWindow(QDialog):
 
         okBtn = QPushButton('O.K.')
         okBtn.clicked.connect(self.build_click)
-        
-        
         self.cancelBtn = QPushButton('Cancela')
-
-        self.saveBtn = QPushButton('Save')
-
-        self.loadBtn = QPushButton('Load')
-
-        tabLayout.addLayout(self.addHDumLayout([okBtn,self.saveBtn,self.loadBtn,self.cancelBtn]))
+        self.cancelBtn.clicked.connect(self.cancel_btn_click)
         
+        self.saveBtn = QPushButton('Save')
+        self.loadBtn = QPushButton('Load')
+        tabLayout.addLayout(self.addHDumLayout([okBtn,self.saveBtn,self.loadBtn,self.cancelBtn]))
         mainTabLayout.addLayout(tabLayout)
 
     def make_tab_sql(self):
@@ -859,7 +855,6 @@ class MainWindow(QDialog):
         class_code = self.make_class_code()
         main_code = self.make_main_code()
         toto = import_code + '\n' + class_code + '\n' + main_code
-        print(toto)
         sourceFile = open('./test.py', 'w')
         print(toto, file=sourceFile)
         sourceFile.close()
@@ -885,10 +880,20 @@ class MainWindow(QDialog):
         class_code += TAB + 'def __init__(self, parent=None):\n'
         class_code += TAB + TAB + 'super(' + class_name + ', self).__init__(parent)\n'
         class_code += TAB +TAB + 'masterLayout = QVBoxLayout(self)\n'
+        class_code += self.make_layouts()
         for line in range(0,self.grdMain.rowCount()):
-            class_code += TAB + TAB + self.grdMain.item(line, 1).text() + ' = '
-            class_code += self.grdMain.item(line, 0).text() + '()\n'
-            class_code += TAB + TAB + 'masterLayout.addWidget(' + self.grdMain.item(line, 1).text() + ')\n'
+            
+            if self.grdMain.item(line, 3).text() != 'None':
+                print('tem layout')
+                class_code += TAB + TAB + self.grdMain.item(line, 1).text() + ' = '
+                class_code += self.grdMain.item(line, 0).text() + '()\n'
+                class_code += TAB + TAB +  self.grdMain.item(line, 3).text() + '.addWidget(' + self.grdMain.item(line, 1).text() + ')\n'
+            else:
+                if self.grdMain.item(line, 0).text() in ['QVBoxLayout', 'QHBoxLayout']:
+                    pass
+                else:
+                    class_code += TAB + TAB + 'masterLayout.addWidget(' + self.grdMain.item(line, 1).text() + ')\n'
+        class_code += self.add_layouts_code()
         return class_code
     
     def make_main_code(self):
@@ -902,6 +907,21 @@ class MainWindow(QDialog):
         main_code += TAB + 'main()\n'
         return main_code
 
+    def make_layouts(self):
+        layouts_code = ''
+        for linha in range(0, self.grdMain.rowCount()):
+            h = self.grdMain.item(linha, 0).text()
+            if h in ('QVBoxLayout', 'QHBoxLayout'):
+                layouts_code += TAB + TAB + self.grdMain.item(linha, 1).text() + ' = ' + h + '()\n'
+        return layouts_code
+    
+    def add_layouts_code(self):
+        add_layouts_code = ''
+        for linha in range(0, self.grdMain.rowCount()):
+            h = self.grdMain.item(linha, 0).text()
+            if h in ('QVBoxLayout', 'QHBoxLayout'):
+                add_layouts_code += TAB + TAB + 'masterLayout.adddLayout(' + self.grdMain.item(linha, 1).text() + ')\n'
+        return add_layouts_code
 
 def main():
     app = QApplication(sys.argv)

@@ -13,7 +13,7 @@ class Properties(QDialog):
         super(Properties, self).__init__(parent)
         self.resize(400, 600)
         self.setWindowTitle('Propertis')
-        self.ctrl_list = ['QComboBox', 'QLineEdit', 'QSpinBox', 'QPlainTextEdit', 'QDateEdit', 'QDoubleSpinBox',
+        self.ctrl_list = ['QLineEdit','QLabel', 'QComboBox','QSpinBox', 'QPlainTextEdit', 'QDateEdit', 'QDoubleSpinBox',
                           'QCheckBox',
                           'QTableWidget', 'QPushButton', 'QToolButton', 'QListWidget', 'QVBoxLayout', 'QHBoxLayout']
         self.ret = {'responce': False}
