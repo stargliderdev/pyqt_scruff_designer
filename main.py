@@ -221,11 +221,6 @@ class MainWindow(QDialog):
 
         self.codePlainText.setPlainText(toto)
 
-    def run_sql_click(self):
-        conn = psycopg2.connect(pa.conn_string)
-        sql = self.sql_PlainText.toPlainText()
-        self.make_data_model(get_fields(conn, str(sql)))
-
     def add_click(self):
         import properties
         self.update_layouts()
@@ -906,7 +901,6 @@ class MainWindow(QDialog):
         main_code += '''if __name__ == '__main__':\n'''
         main_code += TAB + 'main()\n'
         return main_code
-
 
 
 def main():
