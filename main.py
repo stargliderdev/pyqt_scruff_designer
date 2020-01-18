@@ -105,9 +105,7 @@ class MainWindow(QDialog):
         self.tab2 = QWidget()
         mainTabLayout = QVBoxLayout(self.tab2)
         tabLayout = QVBoxLayout()
-
         self.run_sqlBtn = QPushButton('Run')
-        # self.connect(self.run_sqlBtn, SIGNAL("clicked()"), self.run_sql_click)
 
         self.table_LineEdit = QLineEdit()
         self.table_LineEdit.setText('table')
@@ -141,7 +139,6 @@ class MainWindow(QDialog):
         tabLayout.addLayout(self.addHDumLayout(['Code', self.codePlainText]))
 
         self.make_Button = QPushButton('MAKE')
-        # self.connect(self.make_Button, SIGNAL("clicked()"), self.make_tab_click)
 
         tabLayout.addLayout(self.addHDumLayout([ self.make_Button]))
 
@@ -340,26 +337,6 @@ class MainWindow(QDialog):
 
     def update_row(self, data, line):
         col = 0
-        #
-        # item = QTableWidgetItem()
-        # item.setTextAlignment(Qt.AlignRight|Qt.AlignVCenter)
-        # self.grdMain.setCellWidget(line, col, QCheckBox())
-        # self.grdMain.cellWidget(line, col).setChecked(data['data'])
-        # self.grdMain.setItem(line, col, item)
-        # col +=1
-        #
-        # item = QTableWidgetItem()
-        # item.setTextAlignment(Qt.AlignRight|Qt.AlignVCenter)
-        # self.grdMain.setCellWidget(line, col, QCheckBox())
-        # self.grdMain.cellWidget(line, col).setChecked(data['check'])
-        # self.grdMain.setItem(line, col, item)
-        #
-        # col +=1
-        # item = QTableWidgetItem()
-        # item.setText(data['field'])
-        # self.grdMain.setItem(line, col, item)
-
-        # col +=1
         
         item = QTableWidgetItem()
         dum = QComboBox()
