@@ -1,2 +1,2 @@
 # pyqt_scruff_designer
-A spreedsheat like GUI designe rfor PyQt5
+A spreadsheeat like GUI designer for PyQt5
