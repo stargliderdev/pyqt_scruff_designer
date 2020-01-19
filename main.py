@@ -12,6 +12,7 @@ from PyQt5.QtCore import Qt
 import json
 
 import parameters as gl
+import properties
 
 import stdio
 
@@ -51,37 +52,26 @@ class MainWindow(QDialog):
         self.addBtn = QPushButton('+')
         self.addBtn.clicked.connect(self.add_click)
         
-        # self.addLayoutBtn = QPushButton('Add Layout')
-        # self.addLayoutBtn.clicked.connect(self.add_layout)
         self.upBtn = QPushButton('UP')
         self.upBtn.clicked.connect(self.up_click)
         
 
         self.downBtn = QPushButton('DWN')
         self.downBtn.clicked.connect(self.down_click)
-        
-        # self.insertCheckB = QCheckBox('Insert')
-        #
-        # self.refresCheckB = QCheckBox('Refresh')
-        #
-        # self.updateCheckB = QCheckBox('Update')
-
-        # self.make_tabBtn = QPushButton('TAB')
-        # self.connect(self.make_tabBtn, SIGNAL("clicked()"), self.make_tab)
-        # self.make.clicked.connect(self.)
-        
 
         tabLayout.addLayout(self.addHDumLayout([self.addBtn,self.upBtn,self.downBtn,True]))
 
         self.grdMain =QTableWidget(self)
-        lineHeaders =['Widget','Name','Label','Layout','Sort','Width (min,max)','Height']
-        colCount = len(lineHeaders)
+        lineHeaders =['Widget','Name','Label','Layout','Sort','Width (min,max)','Height','data']
         self.grdMain.setColumnCount(len(lineHeaders))
+        self.grdMain.setSelectionBehavior(QTableWidget.SelectRows)
         self.grdMain.setSelectionMode(QTableWidget.SingleSelection)
+        self.grdMain.setEditTriggers(QTableWidget.NoEditTriggers)
         self.grdMain.verticalHeader().setDefaultSectionSize(20)
         self.grdMain.setAlternatingRowColors (True)
         self.grdMain.verticalHeader().setVisible(False)
         self.grdMain.setHorizontalHeaderLabels(lineHeaders)
+        self.grdMain.cellDoubleClicked.connect(self.cell_click)
         
         designLayout = QHBoxLayout()
         designLayout.addWidget(self.grdMain)
@@ -216,42 +206,49 @@ class MainWindow(QDialog):
             toto += TAB + 'mainTabLayout.addLayout(tabLayout)'
 
         self.codePlainText.setPlainText(toto)
-
+    
+    def cell_click(self, row,col):
+        if col == 0:
+            data = json.loads(self.grdMain.item(row, 7).text())
+            data['new']= False
+            self.update_layouts()
+            form = properties.Properties(data)
+            form.exec_()
+            self.refresh_table_line(form.ret['ctr_data'], row)
+            
     def add_click(self):
-        import properties
-        self.update_layouts()
-        form = properties.Properties()
+        form = properties.Properties({'new':True})
         form.exec_()
         ret = form.ret
         row = self.grdMain.rowCount()
-        col = 0
         if ret['responce']:
-            self.update_layouts()
-            data = ret['ctr_data']
-            if row == 0 :
+            if row == 0:
                 self.grdMain.insertRow(0)
+                row = 0
             else:
                 self.grdMain.insertRow(row)
+            self.refresh_table_line(ret['ctr_data'], row)
             
-            item = QTableWidgetItem()
-            item.setText(data['control'])
-            item.setFlags(Qt.ItemIsEnabled)
-            self.grdMain.setItem(row, col, item)
-            col += 1
-            item = QTableWidgetItem()
-            item.setText(data['control_name'])
-            self.grdMain.setItem(row, col, item)
-            col += 1
-            item = QTableWidgetItem()
-            item.setText(data['label'])
-            self.grdMain.setItem(row, col, item)
-            col += 1
+    def refresh_table_line(self, data, row):
+        item = QTableWidgetItem()
+        item.setText(data['control'])
+        self.grdMain.setItem(row, 0, item)
+        item = QTableWidgetItem()
+        item.setText(data['control_name'])
+        self.grdMain.setItem(row, 1, item)
+        item = QTableWidgetItem()
+        item.setText(data['label'])
+        self.grdMain.setItem(row, 2, item)
 
-            item = QTableWidgetItem()
-            item.setText(data['layout'])
-            item.setFlags(Qt.ItemIsEnabled)
-            self.grdMain.setItem(row, col, item)
-            col += 1
+        item = QTableWidgetItem()
+        item.setText(data['layout'])
+        self.grdMain.setItem(row, 3, item)
+
+        # store data at colum 7 hiden
+        item = QTableWidgetItem()
+        item.setText(json.dumps(data))
+        self.grdMain.setItem(row, 7, item)
+        self.update_layouts()
             
     def update_layouts(self):
         gl.layouts_list = ['None']
@@ -270,21 +267,26 @@ class MainWindow(QDialog):
     def up_click(self):
         row = self.grdMain.currentRow()
         if row > 0:
-            current = self.get_row(row)
-            next = self.get_row(row - 1)
-            self.update_row(current, row - 1)
-            self.update_row(next, row )
+            current_data = json.loads(self.grdMain.item(row, 7).text())
+            next_data = json.loads(self.grdMain.item(row-1, 7).text())
+            self.refresh_table_line(current_data, row - 1)
+            self.refresh_table_line(next_data, row)
             self.grdMain.selectRow(row -1)
 
 
     def down_click(self):
         row = self.grdMain.currentRow()
         if row < self.grdMain.rowCount() -1:
-            current = self.get_row(row)
-            next = self.get_row(row + 1)
-            self.update_row(current, row+1)
-            self.update_row(next, row )
+            current_data = json.loads(self.grdMain.item(row, 7).text())
+            next_data = json.loads(self.grdMain.item(row+1, 7).text())
+            self.refresh_table_line(current_data, row + 1)
+            self.refresh_table_line(next_data, row)
             self.grdMain.selectRow(row +1)
+            # current = self.get_row(row)
+            # next = self.get_row(row + 1)
+            # self.update_row(current, row+1)
+            # self.update_row(next, row )
+            # self.grdMain.selectRow(row +1)
 
     def get_row(self, linha):
         source_dict = {}

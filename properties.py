@@ -9,13 +9,14 @@ import qlib as qc
 import parameters as gl
 
 class Properties(QDialog):
-    def __init__(self, parent=None):
+    def __init__(self, data_dict,parent=None):
         super(Properties, self).__init__(parent)
         self.resize(400, 600)
         self.setWindowTitle('Properties')
         self.ctrl_list = ['QLineEdit','QLabel','QPushButton','QTableWidget','QToolButton',  'QComboBox','QDateEdit', 'QCheckBox','QSpinBox', 'QPlainTextEdit', 'QDoubleSpinBox',
-                           'QListWidget', 'QVBoxLayout', 'QHBoxLayout','addStretch']
+                          'QListWidget', 'QVBoxLayout', 'QHBoxLayout','addStretch']
         self.ret = {'responce': False}
+        self.data_dict = data_dict
         masterLayout = QVBoxLayout(self)
         self.controlCbx = QComboBox()
         self.controlCbx.addItems(self.ctrl_list)
@@ -45,13 +46,25 @@ class Properties(QDialog):
         cancelBtn = QPushButton('Sair')
         cancelBtn.clicked.connect(self.cancel_btn_click)
         masterLayout.addLayout(qc.addHLayout([okBtn, cancelBtn]))
-        self.set_values()
-    
-    
+        if not self.data_dict['new']:
+            self.refresh_form()
+        else:
+            self.set_values()
+        
+    def refresh_form(self):
+        self.controlCbx.setCurrentText(self.data_dict['control'])
+        self.labelEdt.setText(self.data_dict['label'])
+        self.controlNameEdt.setText(self.data_dict['control_name'])
+        self.layoutCbx.setCurrentText(self.data_dict['layout'])
+        # 'max_width': self.maxWight.text(),
+        # 'min_width': self.minWight.text(),
+        # 'max_height': self.maxHeight.text(),
+        # 'min_height': self.minHeight.text(),
+        
     def set_values(self):
         if gl.ADD_SELF == 2:
             self.controlNameEdt.setText('self.')
-      
+    
     def cancel_btn_click(self):
         self.close()
     
@@ -64,11 +77,11 @@ class Properties(QDialog):
                         'min_width': self.minWight.text(),
                         'max_height': self.maxHeight.text(),
                         'min_height': self.minHeight.text(),
-                        'layout': self.layoutCbx.currentText()
-                        }
+                        'layout': self.layoutCbx.currentText(),
+                        'new': False }
             self.ret = {'responce': True, 'ctr_data': ctr_data}
             self.close()
-
+    
     def validate(self):
         flag = True
         if self.controlNameEdt.text() == '' or self.controlNameEdt.text() == 'self.' and self.controlCbx.currentText() != 'addStretch':
