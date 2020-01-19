@@ -891,7 +891,7 @@ class MainWindow(QDialog):
                                                 'label':self.grdMain.item(line, 2).text()})
                 class_code += TAB + TAB +  self.grdMain.item(line, 3).text() + '.addWidget(' + self.grdMain.item(line, 1).text() + ')\n'
             else:
-                if self.grdMain.item(line, 0).text() in ['QVBoxLayout', 'QHBoxLayout']:
+                if self.grdMain.item(line, 0).text() in ['QVBoxLayout', 'QHBoxLayout','addStretch']:
                     pass
                 else:
                     class_code += self.widget_code({'widget_type': self.grdMain.item(line, 0).text(),

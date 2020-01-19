@@ -71,7 +71,7 @@ class Properties(QDialog):
 
     def validate(self):
         flag = True
-        if self.controlNameEdt.text() == '' or self.controlNameEdt.text() == 'self.' :
+        if self.controlNameEdt.text() == '' or self.controlNameEdt.text() == 'self.' and self.controlCbx.currentText() != 'addStretch':
             QMessageBox.critical(None, "Error", "Missing Widget name")
             flag = False
         else:
@@ -82,7 +82,7 @@ class Properties(QDialog):
                 if self.controlNameEdt.text() == '':
                     QMessageBox.critical(None, "Error", "Layouts have to had a name")
                     flag = False
-            
+        if    self.controlCbx.currentText() == 'addStretch': self.controlNameEdt.setText('')
         return flag
 
 def main():
