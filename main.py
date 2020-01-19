@@ -2,19 +2,15 @@
 # -*- coding: utf-8 -*-
 
 import sys
-import urllib
 
 from PyQt5.QtWidgets import QDesktopWidget, QLabel, QVBoxLayout, QLineEdit, QComboBox, \
     QTableWidget, QMenu, QPushButton, QDialog, QTableWidgetItem, QPlainTextEdit,QSpinBox,\
     QWidget, QTabWidget, QApplication, QMessageBox, QStyleFactory, QCheckBox, QAction,QHBoxLayout
-from PyQt5.QtGui import QIcon
 from PyQt5.QtCore import Qt
 import json
 
 import parameters as gl
 import properties
-
-import stdio
 
 import parameters as pa
 
@@ -83,7 +79,11 @@ class MainWindow(QDialog):
         self.cancelBtn.clicked.connect(self.cancel_btn_click)
         
         self.saveBtn = QPushButton('Save')
+        self.saveBtn.clicked.connect(self.save_btn_click)
+        
         self.loadBtn = QPushButton('Load')
+        self.loadBtn.clicked.connect(self.load_btn_click)
+        
         tabLayout.addLayout(self.addHDumLayout([okBtn,self.saveBtn,self.loadBtn,self.cancelBtn]))
         mainTabLayout.addLayout(tabLayout)
 
@@ -157,7 +157,7 @@ class MainWindow(QDialog):
                     toto += self.set_width(data)
                     toto += self.set_size(data)
                     toto += TAB + 'tabLayout.addLayout(self.addHDumLayout([' + self.set_label(data) + data['ctrl_name']
-                    if data['stretch'] == True:
+                    if data['stretch']:
                         toto += ', True'
                     toto += ']))\n'
                     toto += '\n'
@@ -194,7 +194,7 @@ class MainWindow(QDialog):
                     toto += self.set_width(data)
                     toto += self.set_size(data)
                     toto += TAB + 'tabLayout.addLayout(self.addHDumLayout(['  + self.set_label(data) + data['ctrl_name']
-                    if data['stretch'] == True:
+                    if data['stretch']:
                         toto += ', True'
                     toto += ']))\n'
                     toto += '\n'
@@ -252,10 +252,14 @@ class MainWindow(QDialog):
             
     def update_layouts(self):
         gl.layouts_list = ['None']
-        for linha in range(0, self.grdMain.rowCount()):
-            h = self.grdMain.item(linha, 0).text()
-            if h in ('QVBoxLayout', 'QHBoxLayout'):
-                gl.layouts_list.append(self.grdMain.item(linha, 1).text())
+        for row in range(0, self.grdMain.rowCount()):
+            try:
+                h = self.grdMain.item(row, 0).text()
+                if h in ('QVBoxLayout', 'QHBoxLayout'):
+                    gl.layouts_list.append(self.grdMain.item(row, 1).text())
+            except AttributeError:
+                pass
+            
         
     def refresh_row(self):
         item = QTableWidgetItem()
@@ -282,11 +286,6 @@ class MainWindow(QDialog):
             self.refresh_table_line(current_data, row + 1)
             self.refresh_table_line(next_data, row)
             self.grdMain.selectRow(row +1)
-            # current = self.get_row(row)
-            # next = self.get_row(row + 1)
-            # self.update_row(current, row+1)
-            # self.update_row(next, row )
-            # self.grdMain.selectRow(row +1)
 
     def get_row(self, linha):
         source_dict = {}
@@ -558,7 +557,7 @@ class MainWindow(QDialog):
                 else:
                     toto += TAB + 'masterLayout.addLayout(self.addHDumLayout([' + self.set_label(data) + data['ctrl_name']
                 
-                if data['stretch'] == True:
+                if data['stretch']:
                     toto += ', True'
                 toto += ']))\n'
                 toto += '\n'
@@ -610,7 +609,7 @@ class MainWindow(QDialog):
                     toto += self.add_connection(data)
                 else:
                     toto += TAB + 'masterLayout.addLayout(self.addHDumLayout(['  + self.set_label(data) + data['ctrl_name']
-                if data['stretch'] == True:
+                if data['stretch']:
                     toto += ', True'
                 toto += ']))\n'
                 toto += '\n'
@@ -732,53 +731,22 @@ class MainWindow(QDialog):
     def save_btn_click(self):
         members =  {}
         dict_index_key = 0
-        for linha in range(0, self.grdMain.rowCount()):
-            self.t_data = self.grdMain.cellWidget(linha, 0).isChecked()
-            self.t_check = self.grdMain.cellWidget(linha, 1).isChecked()
-            self.t_field = str(self.grdMain.item(linha,2).text())
-            self.t_layout = str(self.grdMain.cellWidget(linha, 3).currentText())
-            self.t_order = str(self.grdMain.item(linha, 4).text())
-            self.t_control = str(self.grdMain.cellWidget(linha, 5).currentText())
-            self.t_label = str(self.grdMain.item(linha,6).text())
-            self.t_ctrl_name = str(self.grdMain.item(linha,7).text())
-            self.t_size = str(self.grdMain.item(linha,8).text())
-            self.t_dictionary = str(self.grdMain.item(linha,9).text())
-            self.t_width = str(self.grdMain.item(linha,10).text())
-            self.t_height = str(self.grdMain.item(linha,11).text())
-            self.t_btn_label = str(self.grdMain.item(linha,12).text())
-            self.t_btn_call = str(self.grdMain.item(linha,13).text())
-            self.t_stretch = self.grdMain.cellWidget(linha, 14).isChecked()
-
-            members[str((str(dict_index_key).zfill(2)))] = {
-            'data': self.t_data,
-            'check': self.t_check,
-            'field':self.t_field,
-            'layout': self.t_layout, 
-            'order': self.t_order, 
-            'control': self.t_control,
-            'label': self.t_label,
-            'ctrl_name': self.t_ctrl_name, 
-            'dictionary': self.t_dictionary,
-            'size': self.t_size,
-            'width': self.t_width,
-            'height': self.t_height, 
-            'btn_label': self.t_btn_label,
-            'btn_call' : self.t_btn_call,
-            'stretch': self.t_stretch
-            }
+        for row in range(0, self.grdMain.rowCount()):
+            line_data = json.loads(self.grdMain.item(row, 7).text())
+            members[str((str(dict_index_key).zfill(2)))] = line_data
             dict_index_key +=1
-        #pprint.pprint(members)
         f = open('file.json', 'w')
         f.write(json.dumps(members))
+        f.close()
 
     def load_btn_click(self):       
         f = open('file.json', 'r')
         members = json.load(open("file.json"))
         self.grdMain.setRowCount(len(members))
-        linha = 0
+        row = 0
         for key, value in sorted(members.items()):
-            self.update_row(value, linha)
-            linha +=1
+            self.refresh_table_line(value, row)
+            row +=1
         self.grdMain.resizeColumnsToContents()
 
     def center(self):
@@ -886,20 +854,22 @@ class MainWindow(QDialog):
         class_code += TAB +TAB + 'masterLayout = QVBoxLayout(self)\n'
         class_code += self.make_layouts()
         for line in range(0,self.grdMain.rowCount()):
-            
             if self.grdMain.item(line, 3).text() != 'None':
+                # print('add widget',self.grdMain.item(line, 0).text())
                 class_code += self.widget_code({'widget_type': self.grdMain.item(line, 0).text(),
                                                 'w_name': self.grdMain.item(line, 1).text(),
-                                                'label':self.grdMain.item(line, 2).text()})
-                class_code += TAB + TAB +  self.grdMain.item(line, 3).text() + '.addWidget(' + self.grdMain.item(line, 1).text() + ')\n'
+                                                'label':self.grdMain.item(line, 2).text(),
+                                                'layout': self.grdMain.item(line, 3).text()})
+                # class_code += TAB + TAB +  self.grdMain.item(line, 3).text() + '.addWidget(' + self.grdMain.item(line, 1).text() + ')\n'
             else:
                 if self.grdMain.item(line, 0).text() in ['QVBoxLayout', 'QHBoxLayout','addStretch']:
                     pass
                 else:
                     class_code += self.widget_code({'widget_type': self.grdMain.item(line, 0).text(),
                                                     'w_name': self.grdMain.item(line, 1).text(),
-                                                    'label': self.grdMain.item(line, 2).text()})
-                    class_code += TAB + TAB + 'masterLayout.addWidget(' + self.grdMain.item(line, 1).text() + ')\n'
+                                                    'label': self.grdMain.item(line, 2).text(),
+                                                    'layout': 'masterLayout'})
+                    # class_code += TAB + TAB + 'masterLayout.addWidget(' + self.grdMain.item(line, 1).text() + ')\n'
         class_code += self.add_layouts_code()
         return class_code
     
@@ -912,6 +882,7 @@ class MainWindow(QDialog):
                 widget_code += TAB + TAB + data['w_name'] + ' = ' + data['widget_type'] +  '(\'''' + data['label'] + '''\')\n'''
             else:
                 widget_code += TAB + TAB + data['w_name'] + ' = ' + data['widget_type'] + '()\n'
+            widget_code += TAB + TAB + data['layout'] + '.addWidget(' + data['w_name'] + ')\n'
         return widget_code
     
     def make_main_code(self):
