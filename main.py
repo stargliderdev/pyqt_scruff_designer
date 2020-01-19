@@ -137,7 +137,8 @@ class MainWindow(QDialog):
             self.update_layouts()
             form = properties.Properties(data)
             form.exec_()
-            self.refresh_table_line(form.ret['ctr_data'], row)
+            if form.ret['responce']:
+                self.refresh_table_line(form.ret['ctr_data'], row)
             
     def add_click(self):
         form = properties.Properties({'new':True})
@@ -343,12 +344,10 @@ class MainWindow(QDialog):
         class_code += self.make_layouts()
         for line in range(0,self.grdMain.rowCount()):
             if self.grdMain.item(line, 3).text() != 'None':
-                # print('add widget',self.grdMain.item(line, 0).text())
                 class_code += self.widget_code({'widget_type': self.grdMain.item(line, 0).text(),
                                                 'w_name': self.grdMain.item(line, 1).text(),
                                                 'label':self.grdMain.item(line, 2).text(),
                                                 'layout': self.grdMain.item(line, 3).text()})
-                # class_code += TAB + TAB +  self.grdMain.item(line, 3).text() + '.addWidget(' + self.grdMain.item(line, 1).text() + ')\n'
             else:
                 if self.grdMain.item(line, 0).text() in ['QVBoxLayout', 'QHBoxLayout','addStretch']:
                     pass
@@ -357,7 +356,6 @@ class MainWindow(QDialog):
                                                     'w_name': self.grdMain.item(line, 1).text(),
                                                     'label': self.grdMain.item(line, 2).text(),
                                                     'layout': 'masterLayout'})
-                    # class_code += TAB + TAB + 'masterLayout.addWidget(' + self.grdMain.item(line, 1).text() + ')\n'
         class_code += self.add_layouts_code()
         return class_code
     
@@ -370,6 +368,8 @@ class MainWindow(QDialog):
                 widget_code += TAB + TAB + data['w_name'] + ' = ' + data['widget_type'] +  '(\'''' + data['label'] + '''\')\n'''
             else:
                 widget_code += TAB + TAB + data['w_name'] + ' = ' + data['widget_type'] + '()\n'
+            if data['max_width'] != '-1':
+                widget_code += TAB + TAB + data ['w_name'] + 'setMaximumWidth(' + data['max_width'] + ')\n'
             widget_code += TAB + TAB + data['layout'] + '.addWidget(' + data['w_name'] + ')\n'
         return widget_code
     

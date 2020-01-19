@@ -14,7 +14,9 @@ class Properties(QDialog):
         self.resize(400, 600)
         self.setWindowTitle('Properties')
         self.ctrl_list = ['QLineEdit','QLabel','QPushButton','QTableWidget','QToolButton',  'QComboBox','QDateEdit', 'QCheckBox','QSpinBox', 'QPlainTextEdit', 'QDoubleSpinBox',
-                          'QListWidget', 'QVBoxLayout', 'QHBoxLayout','addStretch']
+                          'QListWidget','QCalendarWidget',
+                          'QTimeEdit','QDateTimeEdit',
+                          'QCommandLinkButton','QTreeWidget', 'QVBoxLayout', 'QHBoxLayout','addStretch']
         self.ret = {'responce': False}
         self.data_dict = data_dict
         masterLayout = QVBoxLayout(self)
@@ -56,10 +58,14 @@ class Properties(QDialog):
         self.labelEdt.setText(self.data_dict['label'])
         self.controlNameEdt.setText(self.data_dict['control_name'])
         self.layoutCbx.setCurrentText(self.data_dict['layout'])
-        # 'max_width': self.maxWight.text(),
-        # 'min_width': self.minWight.text(),
-        # 'max_height': self.maxHeight.text(),
-        # 'min_height': self.minHeight.text(),
+        if self.data_dict['max_width'] != '-1':
+            self.maxWight.setText(self.data_dict['max_width'])
+        if self.data_dict['min_width'] != '-1':
+            self.minWight.setText(self.data_dict['min_width'])
+        if self.data_dict['max_height'] != '-1':
+            self.maxHeight.setText(self.data_dict['max_height'])
+        if self.data_dict['min_height'] != '-1':
+            self.minHeight.setText(self.data_dict['min_height'])
         
     def set_values(self):
         if gl.ADD_SELF == 2:
@@ -73,12 +79,24 @@ class Properties(QDialog):
         if self.validate():
             ctr_data = {'control': self.controlCbx.currentText(), 'label': self.labelEdt.text(),
                         'control_name': self.controlNameEdt.text(),
-                        'max_width': self.maxWight.text(),
-                        'min_width': self.minWight.text(),
-                        'max_height': self.maxHeight.text(),
-                        'min_height': self.minHeight.text(),
                         'layout': self.layoutCbx.currentText(),
                         'new': False }
+            if self.maxWight.text() != '':
+                ctr_data['max_width'] = self.maxWight.text()
+            else:
+                ctr_data['max_width'] = '-1'
+            if self.minWight.text() != '':
+                ctr_data['min_width'] = self.minWight.text()
+            else:
+                ctr_data['min_width'] = '-1'
+            if self.maxHeight.text() != '':
+                ctr_data['max_height'] = self.maxHeight.text()
+            else:
+                ctr_data['max_height'] = '-1'
+            if self.minHeight.text() != '':
+                ctr_data['min_height'] = self.minHeight.text()
+            else:
+                ctr_data['min_height'] = '-1'
             self.ret = {'responce': True, 'ctr_data': ctr_data}
             self.close()
     
