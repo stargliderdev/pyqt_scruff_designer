@@ -3,19 +3,17 @@
 
 import sys
 
+from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QDesktopWidget, QLabel, QVBoxLayout, QLineEdit, QComboBox, \
     QTableWidget, QMenu, QPushButton, QDialog, QTableWidgetItem, QPlainTextEdit,QSpinBox,\
-    QWidget, QTabWidget, QApplication, QMessageBox, QStyleFactory, QCheckBox, QAction,QHBoxLayout
+    QWidget, QTabWidget, QApplication, QMessageBox, QStyleFactory, QToolButton, QAction,QHBoxLayout
 from PyQt5.QtCore import Qt
 import json
 
 import parameters as gl
 import properties
 
-import parameters as pa
-
 TAB = '    '
-
 
 class MainWindow(QDialog):
     def __init__(self,  parent = None):
@@ -23,8 +21,6 @@ class MainWindow(QDialog):
         self.resize(1024, 768)
         self.center()
         self.setWindowTitle('PyQt Scruff Designer')
-        self.ctrl_list = ['QComboBox','QLineEdit','QSpinBox','QPlainTextEdit','QDateEdit','QDoubleSpinBox','QCheckBox',
-                          'QTableWidget','QPushButton','QToolButton','QListWidget']
 
         mainLayout = QVBoxLayout(self)
         self.tabuladorTabWidget = QTabWidget()
@@ -48,11 +44,13 @@ class MainWindow(QDialog):
         self.addBtn = QPushButton('+')
         self.addBtn.clicked.connect(self.add_click)
         
-        self.upBtn = QPushButton('UP')
+        self.upBtn = QToolButton()
+        self.upBtn.setIcon(QIcon('up.png'))
         self.upBtn.clicked.connect(self.up_click)
         
 
-        self.downBtn = QPushButton('DWN')
+        self.downBtn = QToolButton()
+        self.downBtn.setIcon(QIcon('down.png'))
         self.downBtn.clicked.connect(self.down_click)
 
         tabLayout.addLayout(self.addHDumLayout([self.addBtn,self.upBtn,self.downBtn,True]))
@@ -67,6 +65,7 @@ class MainWindow(QDialog):
         self.grdMain.setAlternatingRowColors (True)
         self.grdMain.verticalHeader().setVisible(False)
         self.grdMain.setHorizontalHeaderLabels(lineHeaders)
+        self.grdMain.setColumnWidth(7,0)
         self.grdMain.cellDoubleClicked.connect(self.cell_click)
         
         designLayout = QHBoxLayout()
@@ -152,13 +151,14 @@ class MainWindow(QDialog):
             else:
                 self.grdMain.insertRow(row)
             self.refresh_table_line(ret['ctr_data'], row)
-            
+        self.grdMain.setColumnWidth(7, 0)
+        
     def refresh_table_line(self, data, row):
         item = QTableWidgetItem()
-        item.setText(data['control'])
+        item.setText(data['widget'])
         self.grdMain.setItem(row, 0, item)
         item = QTableWidgetItem()
-        item.setText(data['control_name'])
+        item.setText(data['widget_name'])
         self.grdMain.setItem(row, 1, item)
         item = QTableWidgetItem()
         item.setText(data['label'])
@@ -173,6 +173,7 @@ class MainWindow(QDialog):
         item.setText(json.dumps(data))
         self.grdMain.setItem(row, 7, item)
         self.update_layouts()
+        
             
     def update_layouts(self):
         gl.layouts_list = ['None']
@@ -219,7 +220,7 @@ class MainWindow(QDialog):
         source_dict['field'] = str(self.grdMain.item(linha,2).text())
         source_dict['layout'] = str(self.grdMain.cellWidget(linha, 3).currentText())
         source_dict['order'] = str(self.grdMain.item(linha,4).text())
-        source_dict['control'] = str(self.grdMain.cellWidget(linha, 5).currentText())
+        source_dict['widget'] = str(self.grdMain.cellWidget(linha, 5).currentText())
         source_dict['label'] = str(self.grdMain.item(linha,6).text()).encode('utf-8')
         source_dict['ctrl_name'] = str(self.grdMain.item(linha,7).text())
         source_dict['size'] = str(self.grdMain.item(linha,8).text())
@@ -264,7 +265,7 @@ class MainWindow(QDialog):
         for key, value in sorted(members.items()):
             self.refresh_table_line(value, row)
             row +=1
-        self.grdMain.resizeColumnsToContents()
+        # self.grdMain.resizeColumnsToContents()
 
     def center(self):
         qr = self.frameGeometry()
@@ -335,42 +336,44 @@ class MainWindow(QDialog):
             block_import += n + ', '
         return block_import[:-2] + '\n'
         
-    def make_class_code(self):
+    def make_class_code(self):       
         class_name = 'TestClass'
         class_code = 'class ' + class_name + '(QDialog):\n'
         class_code += TAB + 'def __init__(self, parent=None):\n'
         class_code += TAB + TAB + 'super(' + class_name + ', self).__init__(parent)\n'
-        class_code += TAB +TAB + 'masterLayout = QVBoxLayout(self)\n'
+        class_code += TAB +TAB + gl.LAYOUT_DEFAULT + ' = QVBoxLayout(self)\n'
         class_code += self.make_layouts()
         for line in range(0,self.grdMain.rowCount()):
+            
             if self.grdMain.item(line, 3).text() != 'None':
-                class_code += self.widget_code({'widget_type': self.grdMain.item(line, 0).text(),
-                                                'w_name': self.grdMain.item(line, 1).text(),
-                                                'label':self.grdMain.item(line, 2).text(),
-                                                'layout': self.grdMain.item(line, 3).text()})
+                class_code += self.widget_code(json.loads(self.grdMain.item(line,7).text()))
             else:
                 if self.grdMain.item(line, 0).text() in ['QVBoxLayout', 'QHBoxLayout','addStretch']:
                     pass
                 else:
-                    class_code += self.widget_code({'widget_type': self.grdMain.item(line, 0).text(),
-                                                    'w_name': self.grdMain.item(line, 1).text(),
-                                                    'label': self.grdMain.item(line, 2).text(),
-                                                    'layout': 'masterLayout'})
+                    class_code += self.widget_code(json.loads(self.grdMain.item(line, 7).text()))
         class_code += self.add_layouts_code()
         return class_code
     
     def widget_code(self, data):
         widget_code = ''
-        if data['widget_type'] == 'addStretch':
+        if data['layout'] == 'None': data['layout'] = gl.LAYOUT_DEFAULT
+        if data['widget'] == 'addStretch':
             pass
         else:
-            if data['widget_type'] in ['QLabel', 'QPushButton','QCheckBox']:
-                widget_code += TAB + TAB + data['w_name'] + ' = ' + data['widget_type'] +  '(\'''' + data['label'] + '''\')\n'''
+            if data['widget'] in ['QLabel', 'QPushButton','QCheckBox']:
+                widget_code += TAB + TAB + data['widget_name'] + ' = ' + data['widget'] +  '(\'''' + data['label'] + '''\')\n'''
             else:
-                widget_code += TAB + TAB + data['w_name'] + ' = ' + data['widget_type'] + '()\n'
+                widget_code += TAB + TAB + data['widget_name'] + ' = ' + data['widget'] + '()\n'
             if data['max_width'] != '-1':
-                widget_code += TAB + TAB + data ['w_name'] + 'setMaximumWidth(' + data['max_width'] + ')\n'
-            widget_code += TAB + TAB + data['layout'] + '.addWidget(' + data['w_name'] + ')\n'
+                widget_code += TAB + TAB + data ['widget_name'] + '.setMaximumWidth(' + data['max_width'] + ')\n'
+            if data['min_width'] != '-1':
+                widget_code += TAB + TAB + data ['widget_name'] + '.setMinimumWidth(' + data['min_width'] + ')\n'
+            if data['max_height'] != '-1':
+                widget_code += TAB + TAB + data['widget_name'] + '.setMaximumHeight(' + data['max_height'] + ')\n'
+            if data['min_height'] != '-1':
+                widget_code += TAB + TAB + data['widget_name'] + '.setMinimumHeight(' + data['min_height'] + ')\n'
+            widget_code += TAB + TAB + data['layout'] + '.addWidget(' + data['widget_name'] + ')\n'
         return widget_code
     
     def make_main_code(self):

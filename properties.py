@@ -54,9 +54,9 @@ class Properties(QDialog):
             self.set_values()
         
     def refresh_form(self):
-        self.controlCbx.setCurrentText(self.data_dict['control'])
+        self.controlCbx.setCurrentText(self.data_dict['widget'])
         self.labelEdt.setText(self.data_dict['label'])
-        self.controlNameEdt.setText(self.data_dict['control_name'])
+        self.controlNameEdt.setText(self.data_dict['widget_name'])
         self.layoutCbx.setCurrentText(self.data_dict['layout'])
         if self.data_dict['max_width'] != '-1':
             self.maxWight.setText(self.data_dict['max_width'])
@@ -77,8 +77,8 @@ class Properties(QDialog):
     def ok_click(self):
         gl.ADD_SELF = self.addSelf.checkState()
         if self.validate():
-            ctr_data = {'control': self.controlCbx.currentText(), 'label': self.labelEdt.text(),
-                        'control_name': self.controlNameEdt.text(),
+            ctr_data = {'widget': self.controlCbx.currentText(), 'label': self.labelEdt.text(),
+                        'widget_name': self.controlNameEdt.text(),
                         'layout': self.layoutCbx.currentText(),
                         'new': False }
             if self.maxWight.text() != '':
