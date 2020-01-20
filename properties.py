@@ -13,7 +13,8 @@ class Properties(QDialog):
         super(Properties, self).__init__(parent)
         self.resize(400, 600)
         self.setWindowTitle('Properties')
-        self.ctrl_list = ['QLineEdit','QLabel','QPushButton','QTableWidget','QToolButton',  'QComboBox','QDateEdit', 'QCheckBox','QSpinBox', 'QPlainTextEdit', 'QDoubleSpinBox',
+        self.ctrl_list = ['QLineEdit','QLabel','QPushButton','QTableWidget','QToolButton',  'QComboBox','QDateEdit', 'QCheckBox',
+                          'QSpinBox', 'QPlainTextEdit', 'QDoubleSpinBox',
                           'QListWidget','QCalendarWidget',
                           'QTimeEdit','QDateTimeEdit',
                           'QCommandLinkButton','QTreeWidget', 'QVBoxLayout', 'QHBoxLayout','addStretch']
@@ -32,17 +33,21 @@ class Properties(QDialog):
         self.maxHeight = QLineEdit()
         self.minWight = QLineEdit()
         self.minHeight = QLineEdit()
-        
+        self.onClickEdt = QLineEdit()
         masterLayout.addLayout(qc.addHLayout(['Widget', self.controlCbx]))
         masterLayout.addLayout(qc.addHLayout(['Label', self.labelEdt]))
         masterLayout.addLayout(qc.addHLayout(['Name', self.controlNameEdt,self.addSelf]))
         masterLayout.addLayout(qc.addHLayout(['Layout', self.layoutCbx]))
         masterLayout.addLayout(qc.addHLayout(['Width', 'max', self.maxWight, 'min', self.minWight]))
         masterLayout.addLayout(qc.addHLayout(['Height','max', self.maxHeight, 'min', self.minHeight]))
+        masterLayout.addLayout(qc.addHLayout(['on click button',self.onClickEdt]))
         masterLayout.addStretch()
+        advanceBtn = QPushButton('Advance')
+        advanceBtn.clicked.connect(self.advance_click)
         
-        
-        okBtn = QPushButton('Valida')
+        masterLayout.addLayout(qc.addHLayout([advanceBtn,True]))
+
+        okBtn = QPushButton('O.K.')
         okBtn.clicked.connect(self.ok_click)
         
         cancelBtn = QPushButton('Sair')
@@ -99,6 +104,11 @@ class Properties(QDialog):
                 ctr_data['min_height'] = '-1'
             self.ret = {'responce': True, 'ctr_data': ctr_data}
             self.close()
+    
+    def advance_click(self):
+        widget_type = self.controlCbx.currentText()
+        if widget_type == 'QTableWidget':
+            print('call table')
     
     def validate(self):
         flag = True

@@ -5,8 +5,8 @@ import sys
 
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QDesktopWidget, QLabel, QVBoxLayout, QLineEdit, QComboBox, \
-    QTableWidget, QMenu, QPushButton, QDialog, QTableWidgetItem, QPlainTextEdit,QSpinBox,\
-    QWidget, QTabWidget, QApplication, QMessageBox, QStyleFactory, QToolButton, QAction,QHBoxLayout
+    QTableWidget, QMenu, QPushButton, QDialog, QTableWidgetItem, QPlainTextEdit, QSpinBox, \
+    QWidget, QTabWidget, QApplication, QMessageBox, QStyleFactory, QToolButton, QAction, QHBoxLayout, QFileDialog
 from PyQt5.QtCore import Qt
 import json
 
@@ -72,18 +72,19 @@ class MainWindow(QDialog):
         designLayout.addWidget(self.grdMain)
         tabLayout.addLayout(designLayout)
 
-        okBtn = QPushButton('O.K.')
-        okBtn.clicked.connect(self.build_click)
-        self.cancelBtn = QPushButton('Cancela')
-        self.cancelBtn.clicked.connect(self.cancel_btn_click)
-        
+        okBtn = QPushButton('Make')
+        okBtn.clicked.connect(self.preview_click)
+        showBtn = QPushButton('Show')
+        showBtn.clicked.connect(self.show_click)
         self.saveBtn = QPushButton('Save')
         self.saveBtn.clicked.connect(self.save_btn_click)
         
         self.loadBtn = QPushButton('Load')
         self.loadBtn.clicked.connect(self.load_btn_click)
+        self.cancelBtn = QPushButton('Cancela')
+        self.cancelBtn.clicked.connect(self.cancel_btn_click)
         
-        tabLayout.addLayout(self.addHDumLayout([okBtn,self.saveBtn,self.loadBtn,self.cancelBtn]))
+        tabLayout.addLayout(self.addHDumLayout([okBtn, showBtn, self.saveBtn, self.loadBtn, self.cancelBtn]))
         mainTabLayout.addLayout(tabLayout)
 
     def make_tab_sql(self):
@@ -247,25 +248,32 @@ class MainWindow(QDialog):
      
 
     def save_btn_click(self):
-        members =  {}
-        dict_index_key = 0
-        for row in range(0, self.grdMain.rowCount()):
-            line_data = json.loads(self.grdMain.item(row, 7).text())
-            members[str((str(dict_index_key).zfill(2)))] = line_data
-            dict_index_key +=1
-        f = open('file.json', 'w')
-        f.write(json.dumps(members))
-        f.close()
+        fileName, selectedFilter = QFileDialog.getSaveFileName(
+            self, self.tr("Save Design"), "./", self.tr("*.json"), None)
+        
+        if fileName !='':
+            members =  {}
+            dict_index_key = 0
+            for row in range(0, self.grdMain.rowCount()):
+                line_data = json.loads(self.grdMain.item(row, 7).text())
+                members[str((str(dict_index_key).zfill(2)))] = line_data
+                dict_index_key +=1
+            f = open(fileName, 'w')
+            f.write(json.dumps(members))
+            f.close()
 
-    def load_btn_click(self):       
-        f = open('file.json', 'r')
-        members = json.load(open("file.json"))
-        self.grdMain.setRowCount(len(members))
-        row = 0
-        for key, value in sorted(members.items()):
-            self.refresh_table_line(value, row)
-            row +=1
-        # self.grdMain.resizeColumnsToContents()
+    def load_btn_click(self):
+        fileName, selectedFilter = QFileDialog.getOpenFileName(
+            self, self.tr("Open Design"), "./", self.tr("*.json"), None)
+    
+        if fileName != '':
+            # f = open('file.json', 'r')
+            members = json.load(open(fileName))
+            self.grdMain.setRowCount(len(members))
+            row = 0
+            for key, value in sorted(members.items()):
+                self.refresh_table_line(value, row)
+                row +=1
 
     def center(self):
         qr = self.frameGeometry()
@@ -307,19 +315,29 @@ class MainWindow(QDialog):
                 dumLayout.addWidget(n)
         return dumLayout
 
-    def build_click(self):
+    def show_click(self):
+        toto = self.build()
+        import show
+        form = show.ShowCode(toto)
+        form.exec_()
+        
+    def preview_click(self):
+        toto = self.build()
+        sourceFile = open('./test.py', 'w')
+        print(toto, file=sourceFile)
+        sourceFile.close()
+        from subprocess import Popen
+        p = Popen(['python3','./test.py'])
+
+    def build(self):
         toto = ''
         import_code = self.make_import_code()
         class_code = self.make_class_code()
         stretch_code = self.add_stretch()
         main_code = self.make_main_code()
         toto = import_code + '\n' + class_code + '\n' + stretch_code + main_code
-        sourceFile = open('./test.py', 'w')
-        print(toto, file=sourceFile)
-        sourceFile.close()
-        from subprocess import Popen
-        p = Popen(['python3','./test.py'])
-    
+        return toto
+        
     def make_import_code(self):
         block_import = '''#!/usr/bin/python\n# -*- coding: utf-8 -*-\n'''
         import_set = set()
