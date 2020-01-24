@@ -4,9 +4,9 @@
 import sys
 
 from PyQt5.QtGui import QIcon
-from PyQt5.QtWidgets import QDesktopWidget, QLabel, QVBoxLayout, QLineEdit, QComboBox, \
-    QTableWidget, QMenu, QPushButton, QDialog, QTableWidgetItem, QPlainTextEdit, QSpinBox, \
-    QWidget, QTabWidget, QApplication, QMessageBox, QStyleFactory, QToolButton, QAction, QHBoxLayout, QFileDialog
+from PyQt5.QtWidgets import QDesktopWidget, QLabel, QVBoxLayout, QLineEdit,  \
+    QTableWidget, QPushButton, QDialog, QTableWidgetItem, QPlainTextEdit, QSpinBox, \
+    QWidget, QTabWidget, QApplication,   QToolButton,  QHBoxLayout, QFileDialog
 from PyQt5.QtCore import Qt
 import json
 
@@ -52,8 +52,13 @@ class MainWindow(QDialog):
         self.downBtn = QToolButton()
         self.downBtn.setIcon(QIcon('down.png'))
         self.downBtn.clicked.connect(self.down_click)
+        
+        deleteBtn = QToolButton()
+        # deleteBtn.setIcon(QIcon('down.png'))
+        deleteBtn.clicked.connect(self.delete_click)
 
-        tabLayout.addLayout(self.addHDumLayout([self.addBtn,self.upBtn,self.downBtn,True]))
+
+        tabLayout.addLayout(self.addHDumLayout([self.addBtn,self.upBtn,self.downBtn,deleteBtn,True]))
 
         self.grdMain =QTableWidget(self)
         lineHeaders =['Widget','Name','Label','Layout','Sort','Width (min,max)','Height','data']
@@ -67,7 +72,11 @@ class MainWindow(QDialog):
         self.grdMain.setHorizontalHeaderLabels(lineHeaders)
         self.grdMain.setColumnWidth(7,0)
         self.grdMain.cellDoubleClicked.connect(self.cell_click)
-        
+        self.grdMain.setColumnWidth(0, 150)
+        self.grdMain.setColumnWidth(4, 0)
+        self.grdMain.setColumnWidth(5, 0)
+        self.grdMain.setColumnWidth(6, 0)
+        self.grdMain.setColumnWidth(7, 0)
         designLayout = QHBoxLayout()
         designLayout.addWidget(self.grdMain)
         tabLayout.addLayout(designLayout)
@@ -152,7 +161,7 @@ class MainWindow(QDialog):
             else:
                 self.grdMain.insertRow(row)
             self.refresh_table_line(ret['ctr_data'], row)
-        self.grdMain.setColumnWidth(7, 0)
+
         
     def refresh_table_line(self, data, row):
         item = QTableWidgetItem()
@@ -181,7 +190,7 @@ class MainWindow(QDialog):
         for row in range(0, self.grdMain.rowCount()):
             try:
                 h = self.grdMain.item(row, 0).text()
-                if h in ('QVBoxLayout', 'QHBoxLayout'):
+                if h in ('QVBoxLayout', 'QHBoxLayout','qc.addHLayout','qc.addVLayout'):
                     gl.layouts_list.append(self.grdMain.item(row, 1).text())
             except AttributeError:
                 pass
@@ -205,6 +214,10 @@ class MainWindow(QDialog):
             self.refresh_table_line(current_data, row + 1)
             self.refresh_table_line(next_data, row)
             self.grdMain.selectRow(row +1)
+            
+    def delete_click(self):
+        row = self.grdMain.currentRow()
+        self.grdMain.removeRow(row)
 
     def get_row(self, linha):
         source_dict = {}
@@ -331,18 +344,23 @@ class MainWindow(QDialog):
 
     def build(self):
         toto = ''
+        self.layout_dict = { }
         import_code = self.make_import_code()
         class_code = self.make_class_code()
         stretch_code = self.add_stretch()
         main_code = self.make_main_code()
-        toto = import_code + '\n' + class_code + '\n' + stretch_code + main_code
+        
+        if bool(self.layout_dict):
+            import_code += 'import qlib as qc\n'
+
+        toto = import_code + class_code + '\n' + stretch_code + main_code
         return toto
         
     def make_import_code(self):
         block_import = '''#!/usr/bin/python\n# -*- coding: utf-8 -*-\n'''
         import_set = set()
         for linha in range(0, self.grdMain.rowCount()):
-            if self.grdMain.item(linha, 0).text() in ['addStretch']:
+            if self.grdMain.item(linha, 0).text() in ['addStretch' ,'qc.addHLayout','qc.addVLayout'] :
                 pass
             else:
                 import_set.add(self.grdMain.item(linha, 0).text())
@@ -352,47 +370,9 @@ class MainWindow(QDialog):
         block_import += 'from PyQt5.QtWidgets import QDialog, QApplication, QVBoxLayout, '
         for n in import_set:
             block_import += n + ', '
-        return block_import[:-2] + '\n'
-        
-    def make_class_code(self):       
-        class_name = 'TestClass'
-        class_code = 'class ' + class_name + '(QDialog):\n'
-        class_code += TAB + 'def __init__(self, parent=None):\n'
-        class_code += TAB + TAB + 'super(' + class_name + ', self).__init__(parent)\n'
-        class_code += TAB +TAB + gl.LAYOUT_DEFAULT + ' = QVBoxLayout(self)\n'
-        class_code += self.make_layouts()
-        for line in range(0,self.grdMain.rowCount()):
-            
-            if self.grdMain.item(line, 3).text() != 'None':
-                class_code += self.widget_code(json.loads(self.grdMain.item(line,7).text()))
-            else:
-                if self.grdMain.item(line, 0).text() in ['QVBoxLayout', 'QHBoxLayout','addStretch']:
-                    pass
-                else:
-                    class_code += self.widget_code(json.loads(self.grdMain.item(line, 7).text()))
-        class_code += self.add_layouts_code()
-        return class_code
-    
-    def widget_code(self, data):
-        widget_code = ''
-        if data['layout'] == 'None': data['layout'] = gl.LAYOUT_DEFAULT
-        if data['widget'] == 'addStretch':
-            pass
-        else:
-            if data['widget'] in ['QLabel', 'QPushButton','QCheckBox']:
-                widget_code += TAB + TAB + data['widget_name'] + ' = ' + data['widget'] +  '(\'''' + data['label'] + '''\')\n'''
-            else:
-                widget_code += TAB + TAB + data['widget_name'] + ' = ' + data['widget'] + '()\n'
-            if data['max_width'] != '-1':
-                widget_code += TAB + TAB + data ['widget_name'] + '.setMaximumWidth(' + data['max_width'] + ')\n'
-            if data['min_width'] != '-1':
-                widget_code += TAB + TAB + data ['widget_name'] + '.setMinimumWidth(' + data['min_width'] + ')\n'
-            if data['max_height'] != '-1':
-                widget_code += TAB + TAB + data['widget_name'] + '.setMaximumHeight(' + data['max_height'] + ')\n'
-            if data['min_height'] != '-1':
-                widget_code += TAB + TAB + data['widget_name'] + '.setMinimumHeight(' + data['min_height'] + ')\n'
-            widget_code += TAB + TAB + data['layout'] + '.addWidget(' + data['widget_name'] + ')\n'
-        return widget_code
+        block_import = block_import[:-2] + '\n'
+        block_import += '\nimport qlib as qc \n'
+        return block_import
     
     def make_main_code(self):
         class_name = 'TestClass'
@@ -404,6 +384,65 @@ class MainWindow(QDialog):
         main_code += '''if __name__ == '__main__':\n'''
         main_code += TAB + 'main()\n'
         return main_code
+        
+    def make_class_code(self):       
+        class_name = 'TestClass'
+        class_code = 'class ' + class_name + '(QDialog):\n'
+        class_code += TAB + 'def __init__(self, parent=None):\n'
+        class_code += TAB + TAB + 'super(' + class_name + ', self).__init__(parent)\n'
+        class_code += TAB +TAB + gl.LAYOUT_DEFAULT + ' = QVBoxLayout(self)\n'
+        class_code += self.make_layouts()
+        for line in range(0,self.grdMain.rowCount()):
+            if self.grdMain.item(line, 3).text() != 'None':
+                class_code += self.widget_code(json.loads(self.grdMain.item(line,7).text()))
+            else:
+                if self.grdMain.item(line, 0).text() in ['QVBoxLayout', 'QHBoxLayout']: # , 'addStretch', 'qc.addHLayout','qc.addVLayout']:
+                    pass
+                    # if self.grdMain.item(line, 0).text() in ['qc.addHLayout','qc.addVLayout']:
+                    #     self.widget_code(json.loads(self.grdMain.item(line,7).text()))
+                else:
+                    class_code += self.widget_code(json.loads(self.grdMain.item(line, 7).text()))
+                    
+        class_code += self.add_layouts_code()
+        return class_code
+    
+    def widget_code(self, data):
+        widget_code = ''
+        LOCK_LAYOUT = False
+        if data['layout'] == 'None': data['layout'] = gl.LAYOUT_DEFAULT
+        if data['widget'] == 'addStretch':
+            pass
+        else:
+            if data['widget'] in ['QLabel', 'QPushButton','QCheckBox']:
+                widget_code += TAB + TAB + data['widget_name'] + ' = ' + data['widget'] +  '(\'''' + data['label'] + '''\')\n'''
+            else:
+                if data['label'] !='':
+                    widget_code += TAB + TAB + data['widget_name'] + ' = ' + data['widget'] + '()\n'
+                    widget_code += TAB + TAB + data['layout'] + '.addLayout(qc.addHLayout([\'' + data['label'] + '\',' + data['widget_name'] + ']))\n'
+                    LOCK_LAYOUT = True
+                else:
+                    widget_code += TAB + TAB + data['widget_name'] + ' = ' + data['widget'] + '()\n'
+            if data['max_width'] != '-1':
+                widget_code += TAB + TAB + data ['widget_name'] + '.setMaximumWidth(' + data['max_width'] + ')\n'
+            if data['min_width'] != '-1':
+                widget_code += TAB + TAB + data ['widget_name'] + '.setMinimumWidth(' + data['min_width'] + ')\n'
+            if data['max_height'] != '-1':
+                widget_code += TAB + TAB + data['widget_name'] + '.setMaximumHeight(' + data['max_height'] + ')\n'
+            if data['min_height'] != '-1':
+                widget_code += TAB + TAB + data['widget_name'] + '.setMinimumHeight(' + data['min_height'] + ')\n'
+            # if data['layout'] in ['qc.addHLayout','qc.addVLayout']:
+            #     print(data['widget'], 'qc detecte', self.layout_dict)
+            #     if data['widget_name'] in self.layout_dict:
+            #         self.layout_dict[data['widget_name']] = self.layout_dict[data['widget_name']] + data['label'] + ',' + data['widget_name']
+            #         print('tá no dict de qc = ',self.layout_dict[data['widget_name']] + data['label'] + ',' + data['widget_name'])
+            #     else:
+            #         self.layout_dict[data['widget_name']] = data['label'] + ',' + data['widget_name']
+            else:
+                if not LOCK_LAYOUT:
+                    widget_code += TAB + TAB + data['layout'] + '.addWidget(' + data['widget_name'] + ')\n'
+        return widget_code
+    
+
 
     def make_layouts(self):
         layouts_code = ''
@@ -411,6 +450,12 @@ class MainWindow(QDialog):
             h = self.grdMain.item(linha, 0).text()
             if h in ('QVBoxLayout', 'QHBoxLayout'):
                 layouts_code += TAB + TAB + self.grdMain.item(linha, 1).text() + ' = ' + h + '()\n'
+            elif h in ('qc.addHLayout','qc.addVLayout'):
+                l_name = self.grdMain.item(linha, 1).text()
+                if l_name in self.layout_dict:
+                    pass
+                else:
+                    self.layout_dict[l_name] = ''
         return layouts_code
     
     def add_layouts_code(self):

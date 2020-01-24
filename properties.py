@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 import sys
 
-from PyQt5.QtWidgets import QDialog, QVBoxLayout, QPushButton, QSpinBox, QApplication, QToolButton, QMessageBox, \
+from PyQt5.QtWidgets import QDialog, QVBoxLayout, QPushButton,  QApplication, QMessageBox, \
     QLineEdit, QComboBox, QCheckBox
 
 import qlib as qc
